@@ -69,12 +69,13 @@ export default function ProfilePage() {
         try {
             const { data, error } = await insforge.storage.from('avatars').uploadAuto(file);
             if (error) throw error;
+            if (!data?.url) throw new Error('No URL returned from upload');
 
-            const { data: publicUrlData } = insforge.storage.from('avatars').getPublicUrl(data.path);
-            setAvatarUrl(publicUrlData.publicUrl);
-        } catch (error) {
-            console.error('Error uploading avatar:', error);
-            alert('Failed to upload avatar');
+            // uploadAuto returns data.url directly — no need for getPublicUrl
+            setAvatarUrl(data.url);
+        } catch (err: any) {
+            console.error('Error uploading avatar:', err);
+            alert('Failed to upload avatar: ' + (err?.message || 'Unknown error'));
         } finally {
             setUploading(false);
         }
