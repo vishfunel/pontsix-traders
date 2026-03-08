@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser, useAuth } from '@insforge/nextjs';
 import { insforge } from '@/lib/insforge';
 import { Sidebar } from '@/components/Sidebar';
@@ -10,6 +10,7 @@ export default function ProfilePage() {
     const { user, isLoaded } = useUser();
     const { isSignedIn } = useAuth();
     const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [profile, setProfile] = useState<any>(null);
     const [username, setUsername] = useState('');
@@ -17,6 +18,7 @@ export default function ProfilePage() {
     const [avatarUrl, setAvatarUrl] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
@@ -59,6 +61,25 @@ export default function ProfilePage() {
         loadProfile();
     }, [user]);
 
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const { data, error } = await insforge.storage.from('avatars').uploadAuto(file);
+            if (error) throw error;
+
+            const { data: publicUrlData } = insforge.storage.from('avatars').getPublicUrl(data.path);
+            setAvatarUrl(publicUrlData.publicUrl);
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            alert('Failed to upload avatar');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user?.id) return;
@@ -83,7 +104,7 @@ export default function ProfilePage() {
     };
 
     return (
-        <main className="max-w-7xl mx-auto flex h-screen overflow-hidden text-sm">
+        <main className="max-w-7xl mx-auto flex h-screen overflow-hidden text-sm pb-16 sm:pb-0">
             <Sidebar />
             <div className="flex-1 flex flex-col border-r border-l border-slate-800 h-full overflow-y-auto w-full max-w-2xl shrink-0 p-6">
                 <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
@@ -115,21 +136,29 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                            <label className="block text-slate-400 mb-2">Avatar URL</label>
-                            <input
-                                type="text"
-                                value={avatarUrl}
-                                onChange={e => setAvatarUrl(e.target.value)}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 outline-none focus:border-emerald-500 transition-colors"
-                                placeholder="https://example.com/avatar.jpg"
-                            />
-
-                            {avatarUrl && (
-                                <div className="mt-4">
-                                    <p className="text-sm text-slate-500 mb-2">Preview:</p>
+                            <label className="block text-slate-400 mb-2">Profile Picture</label>
+                            <div className="flex items-center gap-4">
+                                {avatarUrl ? (
                                     <img src={avatarUrl} alt="Avatar Preview" className="w-16 h-16 rounded-full object-cover border border-slate-700" />
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-700">N/A</div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploading}
+                                    className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors text-sm border border-slate-700"
+                                >
+                                    {uploading ? 'Uploading...' : 'Upload Image'}
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleAvatarUpload}
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+                            </div>
                         </div>
 
                         <button
