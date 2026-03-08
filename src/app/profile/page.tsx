@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { RightPanel } from '@/components/RightPanel';
 import { PostItem } from '@/components/PostItem';
 import { useRouter } from 'next/navigation';
-import { User, Grid3X3, Settings } from 'lucide-react';
+import { User, Grid3X3, Settings, UserPlus, UserMinus, MessageCircle } from 'lucide-react';
 
 export default function ProfilePage() {
     const { user, isLoaded } = useUser();
@@ -24,6 +24,8 @@ export default function ProfilePage() {
     const [postsLoading, setPostsLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
@@ -32,12 +34,13 @@ export default function ProfilePage() {
     }, [isLoaded, isSignedIn, router]);
 
     useEffect(() => {
+        if (!user?.id) return;
+
         async function loadProfile() {
-            if (!user?.id) return;
             const { data, error } = await insforge.database
                 .from('users')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', user!.id)
                 .single();
 
             if (!error && data) {
@@ -45,10 +48,12 @@ export default function ProfilePage() {
                 setUsername(data.username || '');
                 setBio(data.bio || '');
                 setAvatarUrl(data.avatar_url || '');
+                setFollowersCount(data.followers_count || 0);
+                setFollowingCount(data.following_count || 0);
             } else if (error?.code === 'PGRST116') {
                 const { data: newUser } = await insforge.database
                     .from('users')
-                    .insert({ id: user.id, email: user.email, username: user.email?.split('@')[0] })
+                    .insert({ id: user!.id, email: user!.email, username: user!.email?.split('@')[0] })
                     .select()
                     .single();
                 if (newUser) {
@@ -58,22 +63,20 @@ export default function ProfilePage() {
             }
             setLoading(false);
         }
-        loadProfile();
-    }, [user]);
 
-    useEffect(() => {
         async function loadPosts() {
-            if (!user?.id) return;
             const { data } = await insforge.database
                 .from('posts')
                 .select('*, users(username, avatar_url, is_online)')
-                .eq('user_id', user.id)
+                .eq('user_id', user!.id)
                 .order('created_at', { ascending: false });
             if (data) setPosts(data);
             setPostsLoading(false);
         }
+
+        loadProfile();
         loadPosts();
-    }, [user]);
+    }, [user?.id]);
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -102,7 +105,7 @@ export default function ProfilePage() {
         if (error) {
             alert('Error updating profile: ' + error.message);
         } else {
-            alert('Profile updated!');
+            setProfile((p: any) => ({ ...p, username, bio, avatar_url: avatarUrl }));
             setActiveTab('posts');
         }
         setSaving(false);
@@ -115,15 +118,13 @@ export default function ProfilePage() {
 
                 {/* Profile Header */}
                 <div className="shrink-0">
-                    {/* Cover */}
                     <div className="h-28 bg-gradient-to-r from-emerald-900/40 via-cyan-900/30 to-slate-900 relative">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:30px_30px]" />
                     </div>
 
                     <div className="px-4 pb-4 border-b border-slate-800">
-                        {/* Avatar + Edit button row */}
                         <div className="flex items-end justify-between -mt-10 mb-3">
-                            <div className="relative">
+                            <div className="relative group cursor-pointer" onClick={() => setActiveTab('edit')}>
                                 {avatarUrl ? (
                                     <img src={avatarUrl} className="w-20 h-20 rounded-full border-4 border-black object-cover" alt="avatar" />
                                 ) : (
@@ -131,6 +132,9 @@ export default function ProfilePage() {
                                         {username?.[0]?.toUpperCase() || <User className="w-8 h-8" />}
                                     </div>
                                 )}
+                                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="text-white text-xs font-bold">Edit</span>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setActiveTab(activeTab === 'edit' ? 'posts' : 'edit')}
@@ -145,7 +149,17 @@ export default function ProfilePage() {
                             <>
                                 <h2 className="text-lg font-bold text-white">@{username || 'unknown'}</h2>
                                 {bio && <p className="text-sm text-slate-400 mt-1">{bio}</p>}
-                                <p className="text-xs text-slate-600 mt-1">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>
+                                <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
+                                    <span className="text-slate-400">
+                                        <span className="font-bold text-white">{followersCount}</span> Followers
+                                    </span>
+                                    <span className="text-slate-400">
+                                        <span className="font-bold text-white">{followingCount}</span> Following
+                                    </span>
+                                    <span className="text-slate-400">
+                                        <span className="font-bold text-white">{posts.length}</span> Posts
+                                    </span>
+                                </div>
                             </>
                         )}
                     </div>
@@ -171,11 +185,13 @@ export default function ProfilePage() {
 
                 {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto">
-                    {/* POSTS TAB */}
                     {activeTab === 'posts' && (
                         <div className="divide-y divide-slate-800">
                             {postsLoading ? (
-                                <div className="p-8 text-center text-slate-500">Loading your posts...</div>
+                                <div className="p-8 text-center text-slate-500">
+                                    <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                                    Loading your posts...
+                                </div>
                             ) : posts.length === 0 ? (
                                 <div className="p-8 text-center text-slate-500">
                                     <Grid3X3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -188,7 +204,6 @@ export default function ProfilePage() {
                         </div>
                     )}
 
-                    {/* EDIT TAB */}
                     {activeTab === 'edit' && (
                         <div className="p-6">
                             {loading ? (
@@ -210,7 +225,7 @@ export default function ProfilePage() {
                                         <textarea
                                             value={bio}
                                             onChange={e => setBio(e.target.value)}
-                                            rows={4}
+                                            rows={3}
                                             className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 outline-none focus:border-emerald-500 transition-colors"
                                             placeholder="Tell us about your trading style..."
                                         />

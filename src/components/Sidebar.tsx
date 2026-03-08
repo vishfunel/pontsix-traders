@@ -1,5 +1,5 @@
 'use client';
-import { Home, Compass, Newspaper, Bell, User, LogOut } from 'lucide-react';
+import { Home, Compass, Newspaper, Bell, User, LogOut, MessageCircle } from 'lucide-react';
 import { useAuth, useUser, SignInButton, SignUpButton } from '@insforge/nextjs';
 import { insforge } from '@/lib/insforge';
 import Link from 'next/link';
@@ -30,6 +30,7 @@ export function Sidebar() {
                         <SidebarLink icon={<Compass />} label="Explore" href="/explore" active={pathname === '/explore'} />
                         <SidebarLink icon={<Newspaper />} label="Market News" href="/market-news" active={pathname === '/market-news'} />
                         <SidebarLink icon={<Bell />} label="Notifications" href="/notifications" active={pathname === '/notifications'} />
+                        {isSignedIn && <SidebarLink icon={<MessageCircle />} label="Messages" href="/chat" active={pathname === '/chat'} />}
                         {isSignedIn && <SidebarLink icon={<User />} label="Profile" href="/profile" active={pathname === '/profile'} />}
                     </nav>
                 </div>
@@ -62,8 +63,8 @@ export function Sidebar() {
             <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around items-center p-3 z-50">
                 <MobileLink icon={<Home />} href="/home" active={pathname === '/home'} />
                 <MobileLink icon={<Compass />} href="/explore" active={pathname === '/explore'} />
-                <MobileLink icon={<Newspaper />} href="/market-news" active={pathname === '/market-news'} />
                 <MobileLink icon={<Bell />} href="/notifications" active={pathname === '/notifications'} />
+                {isSignedIn && <MobileLink icon={<MessageCircle />} href="/chat" active={pathname === '/chat'} />}
                 {isSignedIn && <MobileLink icon={<User />} href="/profile" active={pathname === '/profile'} />}
             </nav>
         </>
