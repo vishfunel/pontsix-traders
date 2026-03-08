@@ -4,7 +4,7 @@ import { insforge } from '@/lib/insforge';
 
 export function InsforgeProvider({ children }: { children: React.ReactNode }) {
     return (
-        <InsforgeBrowserProvider client={insforge} afterSignInUrl="/">
+        <InsforgeBrowserProvider client={insforge} afterSignInUrl="/home">
             {children}
         </InsforgeBrowserProvider>
     );
