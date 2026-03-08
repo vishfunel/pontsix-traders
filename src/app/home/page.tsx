@@ -1,15 +1,32 @@
+'use client';
 import { Sidebar } from '@/components/Sidebar';
 import { RightPanel } from '@/components/RightPanel';
 import { Feed } from '@/components/Feed';
-import { auth } from '@insforge/nextjs/server';
-import { redirect } from 'next/navigation';
+import { useAuth } from '@insforge/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default async function HomePage() {
-    const session = await auth();
+export default function HomePage() {
+    const { isSignedIn, isLoaded } = useAuth();
+    const router = useRouter();
 
-    if (!session?.userId) {
-        redirect('/');
+    useEffect(() => {
+        if (isLoaded && !isSignedIn) {
+            router.replace('/');
+        }
+    }, [isLoaded, isSignedIn, router]);
+
+    // Show spinner while auth resolves — prevents flash of content on mobile
+    if (!isLoaded) {
+        return (
+            <main className="h-screen w-full bg-black flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+            </main>
+        );
     }
+
+    // If not signed in, show nothing (redirect is in-progress)
+    if (!isSignedIn) return null;
 
     return (
         <main className="max-w-7xl mx-auto flex h-screen overflow-hidden text-sm pb-16 sm:pb-0">
