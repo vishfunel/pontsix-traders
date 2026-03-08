@@ -3,13 +3,16 @@ import { Home, Compass, Newspaper, Bell, User, LogOut } from 'lucide-react';
 import { useAuth, useUser, SignInButton, SignUpButton } from '@insforge/nextjs';
 import { insforge } from '@/lib/insforge';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function Sidebar() {
     const { isLoaded, isSignedIn } = useAuth();
     const { user } = useUser();
+    const pathname = usePathname();
 
     const handleLogout = async () => {
         await insforge.auth.signOut();
+        window.location.href = '/';
     };
 
     return (
@@ -23,11 +26,11 @@ export function Sidebar() {
                     </div>
 
                     <nav className="flex flex-col space-y-2">
-                        <SidebarLink icon={<Home />} label="Home" href="/home" active />
-                        <SidebarLink icon={<Compass />} label="Explore" />
-                        <SidebarLink icon={<Newspaper />} label="Market News" />
-                        <SidebarLink icon={<Bell />} label="Notifications" />
-                        {isSignedIn && <SidebarLink icon={<User />} label="Profile" href="/profile" />}
+                        <SidebarLink icon={<Home />} label="Home" href="/home" active={pathname === '/home'} />
+                        <SidebarLink icon={<Compass />} label="Explore" href="/explore" active={pathname === '/explore'} />
+                        <SidebarLink icon={<Newspaper />} label="Market News" href="/market-news" active={pathname === '/market-news'} />
+                        <SidebarLink icon={<Bell />} label="Notifications" href="/notifications" active={pathname === '/notifications'} />
+                        {isSignedIn && <SidebarLink icon={<User />} label="Profile" href="/profile" active={pathname === '/profile'} />}
                     </nav>
                 </div>
 
@@ -56,17 +59,18 @@ export function Sidebar() {
             </aside>
 
             {/* Mobile Bottom Navigation */}
-            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center p-3 z-50">
-                <MobileLink icon={<Home />} href="/home" active />
-                <MobileLink icon={<Compass />} href="#" />
-                <MobileLink icon={<Bell />} href="#" />
-                {isSignedIn && <MobileLink icon={<User />} href="/profile" />}
+            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around items-center p-3 z-50">
+                <MobileLink icon={<Home />} href="/home" active={pathname === '/home'} />
+                <MobileLink icon={<Compass />} href="/explore" active={pathname === '/explore'} />
+                <MobileLink icon={<Newspaper />} href="/market-news" active={pathname === '/market-news'} />
+                <MobileLink icon={<Bell />} href="/notifications" active={pathname === '/notifications'} />
+                {isSignedIn && <MobileLink icon={<User />} href="/profile" active={pathname === '/profile'} />}
             </nav>
         </>
     );
 }
 
-function SidebarLink({ icon, label, active, href = "#" }: { icon: React.ReactNode, label: string, active?: boolean, href?: string }) {
+function SidebarLink({ icon, label, href, active }: { icon: React.ReactNode, label: string, href: string, active?: boolean }) {
     return (
         <Link href={href} className={`flex items-center justify-center md:justify-start gap-4 p-3 rounded-full w-full transition-all duration-200 ${active ? 'font-bold bg-slate-800 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
             <div className="w-6 h-6">{icon}</div>
@@ -75,7 +79,7 @@ function SidebarLink({ icon, label, active, href = "#" }: { icon: React.ReactNod
     );
 }
 
-function MobileLink({ icon, active, href = "#" }: { icon: React.ReactNode, active?: boolean, href?: string }) {
+function MobileLink({ icon, href, active }: { icon: React.ReactNode, href: string, active?: boolean }) {
     return (
         <Link href={href} className={`p-2 rounded-full transition-colors ${active ? 'text-emerald-400' : 'text-slate-400 hover:text-white'}`}>
             <div className="w-6 h-6">{icon}</div>
