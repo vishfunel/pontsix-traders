@@ -5,7 +5,7 @@ import { BarChart3, Globe, Shield, Zap, CheckCircle2, ArrowRight, Activity, User
 
 export function LandingHero() {
     return (
-        <div className="relative min-h-screen bg-black text-slate-200 overflow-hidden font-sans selection:bg-emerald-500/30">
+        <div className="relative min-h-screen bg-black text-slate-200 overflow-x-hidden font-sans selection:bg-emerald-500/30">
 
             {/* Global Background Effects */}
             <div className="fixed inset-0 z-0 pointer-events-none">
